@@ -36,17 +36,53 @@ The display uses a 14-segment layout for characters. The mapping in `font.py` us
 
 ## Using the Mapping Tool
 
-Run `mapping_tool.py` on the device to interactively find and record segments. The tool now features a graphical UI in the terminal and saves data to `mappings.json`.
+The `mapping_tool.py` is an interactive utility to reverse-engineer the VFD's internal wiring. It allows you to light up individual segments (Grid/Bit pairs) and assign them meaningful names.
+
+### Workflow
+1.  **Run the Tool**: Execute `mapping_tool.py` on the microcontroller.
+2.  **Explore**: Use `n` (Next) and `p` (Previous) to toggle through every Grid and Bit.
+3.  **Identify**: Watch the VFD to see what lights up.
+4.  **Map**: When a segment or icon lights up, assign it a name using the `map` command.
+    *   *Example:* You are on Grid 4, Bit 8, and the top segment of the rightmost digit lights up. Type `map d0_a`.
+5.  **Save**: Periodically type `save` to write changes to `mappings.json`.
+
+### Naming Convention
+The tool uses a `category_name` format. This structure allows the driver to group segments logically (e.g., all segments for Digit 0).
+
+*   **Digits:** `d{n}_{seg}`
+    *   `n`: Digit index (0 is usually rightmost).
+    *   `seg`: Segment name (a-f, g1, g2, h-m).
+    *   *Example:* `d0_a` (Digit 0, Segment A), `d5_g1` (Digit 5, Segment G1).
+*   **Icons:** `icon_{name}`
+    *   *Example:* `icon_play`, `icon_usb`.
+*   **Labels:** `label_{name}`
+    *   *Example:* `label_mhz`, `label_stereo`.
 
 ### Controls
-- **<Enter> / n**: Next Bit (0-15)
-- **p**: Previous Bit
-- **N**: Next Grid (0-11)
-- **P**: Previous Grid
-- **jump <grid> [bit]**: Jump to specific location (e.g., `jump 6 0`)
-- **map <name>**: Record mapping for current segment (e.g., `map d1_d`)
-- **save**: Save recorded mappings to `mappings.json`
-- **q**: Quit
+| Command | Action |
+| :--- | :--- |
+| **`<Enter>` / `n`** | Next Bit (Toggle current off, next on) |
+| **`p`** | Previous Bit |
+| **`N` / `P`** | Next / Previous Grid |
+| **`jump <g> [b]`** | Jump to Grid `g` (and optional Bit `b`) |
+| **`map <name>`** | Assign name to current segment (e.g., `map d1_a`) |
+| **`mode <hex>`** | Change Display Mode (e.g., `mode 8` for 12G/16S) |
+| **`save`** | Save mappings to `mappings.json` |
+| **`q`** | Quit |
 
 ### Data Storage
-Mappings are stored in `mappings.json`. The framework (`font.py`) loads this file automatically.
+Mappings are saved to `mappings.json` in the following structure:
+```json
+{
+  "mappings": {
+    "d0": {
+      "a": [4, 8],
+      "b": [4, 12]
+    },
+    "icon": {
+      "play": [3, 10]
+    }
+  }
+}
+```
+The driver (`font.py`) automatically loads this file to configure the display.

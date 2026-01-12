@@ -11,7 +11,7 @@ def main():
     print("Initializing Sony VFD Driver (PT6315)...")
     
     display = PT6315(clk_pin=PIN_CLK, din_pin=PIN_DAT, stb_pin=PIN_STB)
-    display.set_brightness(7)
+    display.set_brightness(6)
     display.clear()
     
     print(f"Loaded {len(CHAR_POSITIONS)} digits (d0-d{len(CHAR_POSITIONS)-1})")

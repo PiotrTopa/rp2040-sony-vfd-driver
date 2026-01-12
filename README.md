@@ -42,6 +42,18 @@ The PT6315 communicates serially (LSB First).
 
 Key signals: CLK, DIN, STB.
 
+## Adapting for Other Displays
+This driver is designed to be reusable for other VFD panels using the **PT6315** controller.
+
+1.  **Pinout**: Adjust `CLK`, `DAT`, `STB` pins in `main.py` or your application.
+2.  **Display Mode**: The PT6315 supports various Grid/Segment combinations (4G/24S to 12G/16S).
+    *   The Sony 1-869-725-12 uses **12 Grids / 16 Segments** (Mode `0x08`).
+    *   To change this, update `MODE_12_DIG_16_SEG` in `vfd.py` or use the `set_mode()` method.
+3.  **Mapping**: Every VFD panel has a unique internal wiring.
+    *   Use `mapping_tool.py` to reverse-engineer your specific panel.
+    *   The tool saves to `mappings.json`.
+    *   Once mapped, the `PT6315` class in `vfd.py` and `font.py` will automatically use your custom mappings to render text and icons.
+
 ## Getting Started
 1.  Verify voltages (5V on MCU, 6.2V on VFD).
 2.  Upload `vfd.py` and `main.py` to the RP2040.

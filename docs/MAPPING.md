@@ -3,7 +3,7 @@
 ## Overview
 The Sony 1-869-725-12 VFD panel is driven by a PT6315 controller configured in **16 Grid x 12 Segment** mode.
 
-## Grid Allocation (Hypothesis & Findings - 12 Digits Mode)
+## Grid Allocation (12 Digits Mode)
 
 In **12 Digits / 16 Segments** Mode, we only have Grids 0-11. Each Grid has 16 bits (0-15).
 
@@ -24,6 +24,8 @@ In **12 Digits / 16 Segments** Mode, we only have Grids 0-11. Each Grid has 16 b
 | **12-15**  | N/A            | N/A           | Not available in this mode. |
 
 ## Segment Layout (14-Segment)
+
+![14-Segment Layout](images/14-segment.svg)
 
 The display uses a 14-segment layout for characters. The mapping in `font.py` uses the following keys:
 
@@ -48,7 +50,3 @@ Run `mapping_tool.py` on the device to interactively find and record segments. T
 
 ### Data Storage
 Mappings are stored in `mappings.json`. The framework (`font.py`) loads this file automatically.
-
-### Missing Items to Find
-1.  **d1 segment 'd'**: Likely on **Grid 6** (Bits 12-15).
-2.  **Digits d4 - d8**: Likely on Grids 10-11, or utilizing bits 12-15 of other grids.

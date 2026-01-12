@@ -30,13 +30,6 @@
     -   6.2V -> VFD Pin 8 (Filament/Anodes)
     -   *Note:* The VFD PCB generates the negative anode voltage internally.
 
-### Other (RS485 - Currently Unused)
-| RP2040 GPIO | Function | Connection |
-|-------------|---------|------------|
-| GP0         | UART TX | MAX3485 DI |
-| GP1         | UART RX | MAX3485 RO |
-| GP2         | DIR     | MAX3485 RE/DE |
-
 ### Additional Notes
 -   Pins 6 (LED DIRECT) and 7 (LED OSOK) control transistors for Standby/On LEDs - left unconnected for now.
 -   **Important:** Ensure 5V (MCU logic) is stable before applying 6.2V to the VFD to avoid latch-up, although with a common 12V source they start simultaneously which is fine.

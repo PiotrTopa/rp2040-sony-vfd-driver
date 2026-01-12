@@ -1,5 +1,6 @@
 from vfd import PT6315
 import time
+from font import CHAR_POSITIONS, FONT_14SEG
 
 # Pin Configuration (RP2040-Zero)
 PIN_CLK = 4
@@ -9,51 +10,69 @@ PIN_STB = 5
 def main():
     print("Initializing Sony VFD Driver (PT6315)...")
     
-    # Initialize Driver
     display = PT6315(clk_pin=PIN_CLK, din_pin=PIN_DAT, stb_pin=PIN_STB)
-    
-    print("Display Initialized.")
-    # Reduce brightness to test if it's a power issue
-    display.set_brightness(1) 
-    
-    # Test Icons
-    print("Testing Icons...")
-    display.set_icon('icon_mp3', 1)
-    display.flush()
-    time.sleep(0.5)
-    display.set_icon('icon_pgm', 1)
-    display.flush()
-    time.sleep(0.5)
-    
-    # Keep Icons ON to see if they persist
-    print("Icons ON. Waiting...")
-    time.sleep(2)
-    
+    display.set_brightness(7)
     display.clear()
     
-    # Test Strings
-    print("Testing Strings...")
+    print(f"Loaded {len(CHAR_POSITIONS)} digits (d0-d{len(CHAR_POSITIONS)-1})")
     
-    # "SONY" - S(d3), O(d2), N(d1), Y(d0)
-    display.write_string("SONY")
-    
-    # Debug: Re-send display control periodically to see if it fixes degradation
-    print("SONY Displayed. Loop check...")
-    for i in range(20):
-        time.sleep(0.1)
-        # Optional: Force re-flush or brightness set to keep it alive
-        # display.flush() 
-        # display.set_brightness(1)
-    
-    display.write_string("PLAY")
-    display.set_icon('icon_play', 1)
+    # 1. All Segments Test
+    print("Test 1: All Segments On")
+    display.write_string("88888888")
     display.flush()
-    time.sleep(2)
+    time.sleep(1)
     
-    # Counter
-    for i in range(100):
-        display.write_string(f"{i:4}") # Padded to 4 chars
+    # 2. Cycling Digits
+    print("Test 2: Cycling Digits")
+    for i in range(len(CHAR_POSITIONS)):
+        display.clear()
+        display.write_char(i, '8')
+        display.flush()
+        print(f"Digit d{i} ON")
+        time.sleep(0.5)
+        
+    # 3. Text Demo
+    print("Test 3: Text Demo (Slower)")
+    texts = ["HELLO", "SONY", "VFD", "RP2040", "GOOD", "BYTE"]
+    for t in texts:
+        display.clear()
+        print(f"Displaying: {t}")
+        
+        # Simulate what is being written to console
+        # Text writes backwards from d0 (Right)
+        # "SONY" -> Y(d0), N(d1), O(d2), S(d3)
+        
+        debug_str = []
+        target_pos = 0
+        for i in range(len(t) - 1, -1, -1):
+            char = t[i]
+            segs = FONT_14SEG.get(char.upper(), [])
+            debug_str.append(f"d{target_pos}='{char}' {segs}")
+            target_pos += 1
+        print("  Mapping: " + " | ".join(debug_str))
+        
+        display.write_string(t)
+        time.sleep(2.0) # Slower
+        
+    # 4. Icon Test
+    print("Test 4: Icons")
+    display.clear()
+    from font import ICONS
+    for icon_name in ICONS.keys():
+        print(f"Icon: {icon_name}")
+        display.set_icon(icon_name, 1)
+        display.flush()
         time.sleep(0.1)
+        
+    time.sleep(1)
+    display.clear()
+    
+    # 5. Counter
+    print("Test 5: Counter")
+    for i in range(1000):
+        s = f"{i:>8}"
+        display.write_string(s)
+        time.sleep(0.05)
         
     print("Done.")
 

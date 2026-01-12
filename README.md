@@ -2,8 +2,10 @@
 
 Driver for a Sony VFD Display (Model **1-869-725-12**) based on the **PT6315** controller, implemented on an **RP2040-Zero** microcontroller.
 
+![Sony VFD Display](docs/images/vfd_photo_1.png)
+
 ## Project Overview
-The goal of this project is to upcycle a VFD module from vintage Sony audio equipment. Control is achieved via a custom SPI-like protocol. Future plans include external communication via RS485.
+The goal of this project is to upcycle a VFD module from vintage Sony audio equipment. Control is achieved via a custom SPI-like protocol.
 
 ## Hardware
 *   **Display:** Sony 1-869-725-12 (VFD)
@@ -24,12 +26,11 @@ Detailed connection and power supply information can be found in [WIRING.md](WIR
 - [x] Basic PT6315 Driver (MicroPython)
 - [x] Mapping Tool with UI and Persistence
 - [x] Category-based Mappings (JSON)
-- [ ] Segment Mapping (In Progress)
-- [ ] RS485 Support
+- [x] Segment Mapping
 
 ## Mapping Tool
 Use `mapping_tool.py` to identify segments.
-- Supports **Category_Name** format (e.g., `icon_play`, `d1_a`).
+- Supports **Category_Name** format (e.g., `rightLabels_play`, `d1_a`).
 - Saves to `mappings.json`.
 - Uses **12 Digits / 16 Segments** mode (Grid 0-11, Bits 0-15).
 

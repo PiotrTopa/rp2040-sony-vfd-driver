@@ -6,6 +6,7 @@ class PT6315:
     """
     Driver for PT6315 VFD Controller using MicroPython.
     Sony 1-869-725-12 Panel.
+    Standard 12G/16S Mode.
     """
     
     # Command Definitions
@@ -15,8 +16,7 @@ class PT6315:
     CMD_DISPLAY_CTRL = 0x80
 
     # Display Modes (Grid / Segment)
-    # MODE_16_DIG_12_SEG = 0x03 
-    MODE_12_DIG_16_SEG = 0x02
+    MODE_12_DIG_16_SEG = 0x08 # Standard PT6315 12-Digit Mode
 
     # Display Control
     DISP_OFF = 0x00
@@ -33,10 +33,8 @@ class PT6315:
         self.stb.value(1)
         self.din.value(0)
         
-        # In 16 Digits / 12 Segments mode, we likely only use 32 bytes (0x00 - 0x1F)
-        # 16 Grids * 2 Bytes/Grid = 32 Bytes.
-        # Sending more might wrap around and corrupt data.
-        self.buffer = bytearray(32) 
+        # Buffer: 63 Bytes (Avoid 0x3F which crashes VFD)
+        self.buffer = bytearray(63) 
         
         time.sleep_ms(100)
         self.init_display()
@@ -45,11 +43,10 @@ class PT6315:
         # LSB First
         for i in range(8):
             self.clk.value(0)
-            # time.sleep_us(1) # Setup time
             self.din.value((data >> i) & 0x01)
-            time.sleep_us(1) # Hold time
+            time.sleep_us(1)
             self.clk.value(1)
-            time.sleep_us(1) # Clock high width
+            time.sleep_us(1)
 
     def send_command(self, cmd):
         self.stb.value(0)
@@ -79,12 +76,10 @@ class PT6315:
         time.sleep_us(1)
 
     def init_display(self):
-        # Reset sequence recommended by some datasheets
         self.stb.value(1)
         self.clk.value(1)
         time.sleep_ms(10)
         
-        # Use 12 Digits / 16 Segments mode to support 14-segment characters
         self.send_command(self.CMD_MODE_SET | self.MODE_12_DIG_16_SEG)
         self.clear()
         self.send_command(self.CMD_DISPLAY_CTRL | self.DISP_ON | self.DIMMING_MAX)
@@ -103,10 +98,22 @@ class PT6315:
         if level > 7: level = 7
         self.send_command(self.CMD_DISPLAY_CTRL | self.DISP_ON | level)
 
+    def set_mode(self, mode):
+        self.send_command(self.CMD_MODE_SET | mode)
+
+    def write_leds(self, bitmap):
+        # 0x41 = Write LED Port
+        self.stb.value(0)
+        time.sleep_us(1)
+        self._write_byte(0x41)
+        time.sleep_us(1)
+        self._write_byte(bitmap & 0x0F)
+        time.sleep_us(1)
+        self.stb.value(1)
+        time.sleep_us(1)
+
     def set_pixel(self, grid, bit, state):
         """Set a specific Grid/Bit in the buffer."""
-        # 2 bytes per grid. Addr = grid * 2.
-        # Bits 0-7 in first byte, 8-15 in second byte.
         addr_base = grid * 2
         if bit < 8:
             byte_idx = addr_base
@@ -127,21 +134,15 @@ class PT6315:
             self.set_pixel(grid, bit, state)
 
     def write_char(self, char_pos_idx, char):
-        """
-        Write a character to a logical position.
-        char_pos_idx: 0 = Rightmost (d0), 1 = d1, etc.
-        """
         if char_pos_idx >= len(CHAR_POSITIONS):
-            return # Out of range (or not mapped)
+            return 
         
         mapping = CHAR_POSITIONS[char_pos_idx]
         segments = FONT_14SEG.get(char.upper(), [])
         
-        # Clear all segments for this character first
         for seg_name, (grid, bit) in mapping.items():
             self.set_pixel(grid, bit, 0)
             
-        # Light up needed segments
         for seg in segments:
             if seg in mapping:
                 grid, bit = mapping[seg]
@@ -154,9 +155,4 @@ class PT6315:
             char = text[i]
             self.write_char(target_pos, char)
             target_pos += 1
-        self.flush()
-
-    def test_pattern(self):
-        for i in range(len(self.buffer)):
-            self.buffer[i] = 0xFF
         self.flush()

@@ -6,6 +6,8 @@
 - [x] Update font.py to support more digits
 - [x] Create mappings.json and refactor font.py to use it
 - [x] Update mapping_tool.py with graphical UI and JSON persistence
+- [x] Fix display flicker in mapping tool
+- [x] Implement arrow key navigation in mapping tool
 - [ ] Run mapping_tool.py on device
 - [ ] Use mapping tool to find missing 'd1' segment (likely 'd')
 - [ ] Use mapping tool to find missing digits (d4-d8)

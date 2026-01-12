@@ -13,16 +13,21 @@ def main():
     display = PT6315(clk_pin=PIN_CLK, din_pin=PIN_DAT, stb_pin=PIN_STB)
     
     print("Display Initialized.")
-    display.set_brightness(7)
+    # Reduce brightness to test if it's a power issue
+    display.set_brightness(1) 
     
     # Test Icons
     print("Testing Icons...")
-    display.set_icon('mp3', 1)
+    display.set_icon('icon_mp3', 1)
     display.flush()
     time.sleep(0.5)
-    display.set_icon('pgm', 1)
+    display.set_icon('icon_pgm', 1)
     display.flush()
     time.sleep(0.5)
+    
+    # Keep Icons ON to see if they persist
+    print("Icons ON. Waiting...")
+    time.sleep(2)
     
     display.clear()
     
@@ -31,10 +36,17 @@ def main():
     
     # "SONY" - S(d3), O(d2), N(d1), Y(d0)
     display.write_string("SONY")
-    time.sleep(2)
+    
+    # Debug: Re-send display control periodically to see if it fixes degradation
+    print("SONY Displayed. Loop check...")
+    for i in range(20):
+        time.sleep(0.1)
+        # Optional: Force re-flush or brightness set to keep it alive
+        # display.flush() 
+        # display.set_brightness(1)
     
     display.write_string("PLAY")
-    display.set_icon('play', 1)
+    display.set_icon('icon_play', 1)
     display.flush()
     time.sleep(2)
     

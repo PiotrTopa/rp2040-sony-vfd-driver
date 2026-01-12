@@ -16,75 +16,71 @@ def load_data():
             return json.load(f)
     except Exception as e:
         print(f"Error loading {MAPPING_FILE}: {e}")
-        return {"icons": {}, "char_positions": [{} for _ in range(9)]}
+        return {"mappings": {}}
 
 def save_data(data):
     try:
         with open(MAPPING_FILE, "w") as f:
             json.dump(data, f)
         print(f"\nSaved to {MAPPING_FILE}")
+        print("\n--- JSON DUMP (Copy below) ---")
+        # MicroPython json.dumps might not support indent, but we print raw for easy copy
+        print(json.dumps(data))
+        print("------------------------------")
     except Exception as e:
         print(f"\nError saving: {e}")
 
 def get_mapping_name(data, grid, bit):
-    for name, val in data.get("icons", {}).items():
-        if val == [grid, bit]:
-            return f"Icon: {name}"
-    char_pos = data.get("char_positions", [])
-    for idx, char_map in enumerate(char_pos):
-        digit_name = f"d{idx}"
-        for seg, val in char_map.items():
+    mappings = data.get("mappings", {})
+    # Search all categories
+    for category, items in mappings.items():
+        for name, val in items.items():
             if val == [grid, bit]:
-                return f"{digit_name}_{seg}"
+                # e.g. "d1: a" or "icon: play"
+                return f"{category}: {name}"
     return ""
 
 def update_mapping(data, grid, bit, name):
-    # Remove existing
-    keys_to_del = []
-    for k, v in data["icons"].items():
-        if v == [grid, bit]:
-            keys_to_del.append(k)
-    for k in keys_to_del:
-        del data["icons"][k]
+    # Name format: "category_name"
+    if "_" not in name:
+        return False
+        
+    parts = name.split("_", 1) # Split on first underscore
+    category = parts[0]
+    item_name = parts[1]
     
-    for char_map in data["char_positions"]:
+    mappings = data.setdefault("mappings", {})
+    
+    # Remove existing mapping for this grid/bit across ALL categories
+    # Because one bit usually controls one segment/icon
+    for cat, items in mappings.items():
         keys_to_del = []
-        for k, v in char_map.items():
+        for k, v in items.items():
             if v == [grid, bit]:
                 keys_to_del.append(k)
         for k in keys_to_del:
-            del char_map[k]
+            del items[k]
             
-    # Add new
-    if "_" in name and name.startswith("d") and name[1:2].isdigit():
-        parts = name.split("_")
-        if len(parts) == 2:
-            d_idx = int(parts[0][1:])
-            seg = parts[1]
-            while len(data["char_positions"]) <= d_idx:
-                data["char_positions"].append({})
-            data["char_positions"][d_idx][seg] = [grid, bit]
-            return True
-    else:
-        data["icons"][name] = [grid, bit]
-        return True
-    return False
+    # Add new mapping
+    cat_dict = mappings.setdefault(category, {})
+    cat_dict[item_name] = [grid, bit]
+    return True
 
 def draw_ui(grid, bit, mapping_name):
     # ANSI clear screen
     print("\x1b[2J\x1b[H", end="") 
     
     line = ""
-    for b in range(12):
+    for b in range(16):
         if b == bit:
             line += "[*]"
         else:
             line += "[ ]"
     
-    print(f"=== VFD MAPPING TOOL ===")
+    print(f"=== VFD MAPPING TOOL (12G x 16S Mode) ===")
     print(f"GRID: {grid:02d} (Addr 0x{grid*2:02X})")
     print(line)
-    print(" 0  1  2  3  4  5  6  7  8  9 10 11")
+    print(" 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15")
     print("-" * 30)
     print(f"Current: Grid {grid}, Bit {bit}")
     print(f"Mapped:  {mapping_name if mapping_name else '---'}")
@@ -94,7 +90,7 @@ def draw_ui(grid, bit, mapping_name):
     print("  p            : Prev Bit")
     print("  N            : Next Grid")
     print("  P            : Prev Grid")
-    print("  map <name>   : Map (e.g. 'd1_a')")
+    print("  map <name>   : Map (Format: category_name e.g. d1_a, icon_play)")
     print("  jump <g> <b> : Jump to grid/bit")
     print("  save         : Save to JSON")
     print("  q            : Quit")
@@ -105,7 +101,7 @@ def main():
     try:
         display = PT6315(clk_pin=PIN_CLK, din_pin=PIN_DAT, stb_pin=PIN_STB)
         # Clear buffer manually to avoid flush
-        display.buffer = bytearray(48)
+        for i in range(len(display.buffer)): display.buffer[i] = 0
         display.flush()
         display.set_brightness(7)
     except Exception as e:
@@ -122,13 +118,11 @@ def main():
     while True:
         # Update Display only if changed
         if grid != last_grid or bit != last_bit:
-            # FIX: Do not call display.clear() which flushes zeros!
-            # Instead, manipulate buffer directly.
-            display.buffer = bytearray(48) 
+            # FIX: Manually clear buffer (in place)
+            for i in range(len(display.buffer)): display.buffer[i] = 0
+            
             display.set_pixel(grid, bit, 1)
             display.flush()
-            # Reinforce Display ON command to prevent timeouts/resets
-            display.set_brightness(7)
             
             mapping_name = get_mapping_name(data, grid, bit)
             draw_ui(grid, bit, mapping_name)
@@ -149,24 +143,24 @@ def main():
             break
         elif cmd == 'n':
             bit += 1
-            if bit > 11:
+            if bit > 15:
                 bit = 0
                 grid += 1
-                if grid > 15: grid = 0
+                if grid > 11: grid = 0
         elif cmd == 'p':
             bit -= 1
             if bit < 0:
-                bit = 11
+                bit = 15
                 grid -= 1
-                if grid < 0: grid = 15
+                if grid < 0: grid = 11
         elif cmd == 'N': # Uppercase N -> Next Grid
             grid += 1
             bit = 0
-            if grid > 15: grid = 0
+            if grid > 11: grid = 0
         elif cmd == 'P': # Uppercase P -> Prev Grid
             grid -= 1
             bit = 0
-            if grid < 0: grid = 15
+            if grid < 0: grid = 11
         elif cmd == 'jump':
             if len(parts) >= 2:
                 try:
@@ -175,6 +169,8 @@ def main():
                         bit = int(parts[2])
                     else:
                         bit = 0
+                    if grid > 11: grid = 11
+                    if bit > 15: bit = 15
                 except:
                     pass
         elif cmd == 'map':
@@ -184,13 +180,13 @@ def main():
                     print(f"Mapped {name}")
                     last_grid = -1 # Force redraw
                 else:
-                    print("Invalid mapping name format")
+                    print("Invalid format. Use: category_name (e.g. icon_play)")
             else:
-                print("Usage: map <name>")
+                print("Usage: map category_name")
         elif cmd == 'save':
             save_data(data)
             
-    display.clear()
+    #display.clear()
     print("Exiting.")
 
 if __name__ == "__main__":

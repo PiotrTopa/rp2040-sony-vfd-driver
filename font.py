@@ -9,20 +9,30 @@ def load_mappings():
             data = json.load(f)
             
         icons = {}
-        for name, val in data.get("icons", {}).items():
-            icons[name] = tuple(val)
-            
-        char_pos = []
-        for char_map in data.get("char_positions", []):
-            converted_map = {}
-            for seg, val in char_map.items():
-                converted_map[seg] = tuple(val)
-            char_pos.append(converted_map)
+        # Pre-allocate char_positions list for d0-d8
+        char_pos = [{} for _ in range(9)]
+        
+        mappings = data.get("mappings", {})
+        
+        for category, items in mappings.items():
+            if category.startswith("d") and category[1:].isdigit():
+                # Character mapping (d0, d1, ...)
+                idx = int(category[1:])
+                while len(char_pos) <= idx:
+                    char_pos.append({})
+                    
+                for seg, val in items.items():
+                    char_pos[idx][seg] = tuple(val)
+            else:
+                # Icon mapping (category_name)
+                for name, val in items.items():
+                    # Key format: category_name (e.g. icon_play, red-icon_rec)
+                    full_name = f"{category}_{name}"
+                    icons[full_name] = tuple(val)
             
         return icons, char_pos
     except Exception as e:
         print(f"Error loading {MAPPING_FILE}: {e}")
-        # Return empty/default to avoid crash if file missing
         return {}, [{}, {}, {}, {}, {}, {}, {}, {}, {}]
 
 ICONS, CHAR_POSITIONS = load_mappings()

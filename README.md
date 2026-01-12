@@ -22,8 +22,16 @@ Detailed connection and power supply information can be found in [WIRING.md](WIR
 - [x] Hardware analysis and pinout
 - [x] Wiring documentation
 - [x] Basic PT6315 Driver (MicroPython)
+- [x] Mapping Tool with UI and Persistence
+- [x] Category-based Mappings (JSON)
 - [ ] Segment Mapping (In Progress)
 - [ ] RS485 Support
+
+## Mapping Tool
+Use `mapping_tool.py` to identify segments.
+- Supports **Category_Name** format (e.g., `icon_play`, `d1_a`).
+- Saves to `mappings.json`.
+- Uses **12 Digits / 16 Segments** mode (Grid 0-11, Bits 0-15).
 
 ## PT6315 Protocol (Brief)
 The PT6315 communicates serially (LSB First).

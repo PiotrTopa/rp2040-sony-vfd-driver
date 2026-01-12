@@ -127,6 +127,8 @@ def main():
             display.buffer = bytearray(48) 
             display.set_pixel(grid, bit, 1)
             display.flush()
+            # Reinforce Display ON command to prevent timeouts/resets
+            display.set_brightness(7)
             
             mapping_name = get_mapping_name(data, grid, bit)
             draw_ui(grid, bit, mapping_name)

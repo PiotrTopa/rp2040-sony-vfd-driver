@@ -38,13 +38,13 @@ The display uses a 14-segment layout for characters. The mapping in `font.py` us
 Run `mapping_tool.py` on the device to interactively find and record segments. The tool now features a graphical UI in the terminal and saves data to `mappings.json`.
 
 ### Controls
-- **Right Arrow / <Enter>**: Next Bit (0-11)
-- **Left Arrow / p**: Previous Bit
-- **Up Arrow / P**: Previous Grid
-- **Down Arrow / N**: Next Grid
-- **jump**: Jump to specific location (e.g., `6 0`)
-- **m**: Map current segment (prompts for name, e.g., `d1_d` or `play`)
-- **s**: Save recorded mappings to `mappings.json`
+- **<Enter> / n**: Next Bit (0-11)
+- **p**: Previous Bit
+- **N**: Next Grid (0-15)
+- **P**: Previous Grid
+- **jump <grid> [bit]**: Jump to specific location (e.g., `jump 6 0`)
+- **map <name>**: Record mapping for current segment (e.g., `map d1_d`)
+- **save**: Save recorded mappings to `mappings.json`
 - **q**: Quit
 
 ### Data Storage

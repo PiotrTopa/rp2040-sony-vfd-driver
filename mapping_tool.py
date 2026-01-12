@@ -1,7 +1,6 @@
 import json
 import time
 import sys
-import uselect
 from vfd import PT6315
 
 # Pin Configuration
@@ -72,8 +71,7 @@ def update_mapping(data, grid, bit, name):
     return False
 
 def draw_ui(grid, bit, mapping_name):
-    # ANSI clear screen usually works in serial terminals
-    # \x1b[2J clears screen, \x1b[H moves cursor to home
+    # ANSI clear screen
     print("\x1b[2J\x1b[H", end="") 
     
     line = ""
@@ -92,33 +90,15 @@ def draw_ui(grid, bit, mapping_name):
     print(f"Mapped:  {mapping_name if mapping_name else '---'}")
     print("-" * 30)
     print("Controls:")
-    print("  Right / Enter : Next Bit")
-    print("  Left / p      : Prev Bit")
-    print("  Up / P        : Prev Grid")
-    print("  Down / N      : Next Grid")
-    print("  m             : Map (type name)")
-    print("  j             : Jump (type grid [bit])")
-    print("  s             : Save")
-    print("  q             : Quit")
+    print("  <Enter> / n  : Next Bit")
+    print("  p            : Prev Bit")
+    print("  N            : Next Grid")
+    print("  P            : Prev Grid")
+    print("  map <name>   : Map (e.g. 'd1_a')")
+    print("  jump <g> <b> : Jump to grid/bit")
+    print("  save         : Save to JSON")
+    print("  q            : Quit")
     print("-" * 30)
-
-def read_key():
-    # Blocking read of one key
-    k = sys.stdin.read(1)
-    if k == '\x1b':
-        # Check for escape sequence
-        poll = uselect.poll()
-        poll.register(sys.stdin, uselect.POLLIN)
-        if poll.poll(50): # 50ms timeout
-            k2 = sys.stdin.read(1)
-            if k2 == '[':
-                if poll.poll(50):
-                    k3 = sys.stdin.read(1)
-                    if k3 == 'A': return 'UP'
-                    if k3 == 'B': return 'DOWN'
-                    if k3 == 'C': return 'RIGHT'
-                    if k3 == 'D': return 'LEFT'
-    return k
 
 def main():
     print("Initializing...")
@@ -154,82 +134,62 @@ def main():
             last_grid = grid
             last_bit = bit
 
-        # Read Input
+        # Input
         try:
-            key = read_key()
+            inp = input("> ").strip()
         except KeyboardInterrupt:
             break
-        
-        # Parse Key
-        cmd = ''
-        if key in ['\n', '\r', 'n', 'RIGHT']:
-            cmd = 'next_bit'
-        elif key in ['p', 'LEFT']:
-            cmd = 'prev_bit'
-        elif key in ['N', 'DOWN']: # Down arrow goes to next grid (visual flow)
-            cmd = 'next_grid'
-        elif key in ['P', 'UP']:   # Up arrow goes to prev grid
-            cmd = 'prev_grid'
-        elif key == 'q':
-            break
-        elif key == 'm':
-            # Map command
-            print("\nType mapping name (e.g. d1_a): ", end="")
-            name = sys.stdin.readline().strip()
-            if name:
-                if update_mapping(data, grid, bit, name):
-                    print(f"Mapped {name}")
-                else:
-                    print("Invalid format")
-                time.sleep(1)
-                last_grid = -1 # Force redraw
-        elif key == 'j':
-            print("\nJump to (grid [bit]): ", end="")
-            line = sys.stdin.readline().strip()
-            parts = line.split()
-            if len(parts) >= 1:
-                try:
-                    grid = int(parts[0])
-                    if len(parts) >= 2:
-                        bit = int(parts[1])
-                    else:
-                        bit = 0
-                    if grid > 15: grid = 15
-                    if grid < 0: grid = 0
-                    if bit > 11: bit = 11
-                    if bit < 0: bit = 0
-                except:
-                    pass
-            last_grid = -1
-        elif key == 's':
-            save_data(data)
-            time.sleep(1)
-            last_grid = -1
             
-        # Process Movement
-        if cmd == 'next_bit':
+        parts = inp.split()
+        cmd = parts[0].lower() if parts else "n" # Default to 'n' (Next)
+        
+        if cmd == 'q':
+            break
+        elif cmd == 'n':
             bit += 1
             if bit > 11:
                 bit = 0
                 grid += 1
                 if grid > 15: grid = 0
-        elif cmd == 'prev_bit':
+        elif cmd == 'p':
             bit -= 1
             if bit < 0:
                 bit = 11
                 grid -= 1
                 if grid < 0: grid = 15
-        elif cmd == 'next_grid':
+        elif cmd == 'N': # Uppercase N -> Next Grid
             grid += 1
+            bit = 0
             if grid > 15: grid = 0
-            bit = 0
-        elif cmd == 'prev_grid':
+        elif cmd == 'P': # Uppercase P -> Prev Grid
             grid -= 1
-            if grid < 0: grid = 15
             bit = 0
-
+            if grid < 0: grid = 15
+        elif cmd == 'jump':
+            if len(parts) >= 2:
+                try:
+                    grid = int(parts[1])
+                    if len(parts) >= 3:
+                        bit = int(parts[2])
+                    else:
+                        bit = 0
+                except:
+                    pass
+        elif cmd == 'map':
+            if len(parts) > 1:
+                name = parts[1]
+                if update_mapping(data, grid, bit, name):
+                    print(f"Mapped {name}")
+                    last_grid = -1 # Force redraw
+                else:
+                    print("Invalid mapping name format")
+            else:
+                print("Usage: map <name>")
+        elif cmd == 'save':
+            save_data(data)
+            
     display.clear()
-    print("\nExiting.")
+    print("Exiting.")
 
 if __name__ == "__main__":
     main()

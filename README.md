@@ -7,6 +7,8 @@ Driver for a Sony VFD Display (Model **1-869-725-12**) based on the **PT6315** c
 ## Project Overview
 The goal of this project is to upcycle a VFD module from vintage Sony audio equipment. Control is achieved via a custom SPI-like protocol.
 
+[![Demo Video](https://img.youtube.com/vi/wxqvM2dM6oE/0.jpg)](https://www.youtube.com/shorts/wxqvM2dM6oE)
+
 ## Hardware
 *   **Display:** Sony 1-869-725-12 (VFD)
 *   **Driver IC:** PT6315 (NEC/Renesas compatible)
